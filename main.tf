@@ -9,8 +9,8 @@ module "api_gateway" {
   description   = "HTTP API Gateway, Lambda, DynamoDb"
   protocol_type = "HTTP"
 
-  domain_name = #todo
-  certificate_arn = #todo
+  domain_name = aws_api_gateway_domain_name.brosona_api_test.domain_name
+  
 
 
   integrations = {
