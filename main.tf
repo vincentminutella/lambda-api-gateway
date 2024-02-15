@@ -9,9 +9,8 @@ module "api_gateway" {
   description   = "HTTP API Gateway, Lambda, DynamoDb"
   protocol_type = "HTTP"
 
-  domain_name = aws_api_gateway_domain_name.brosona_api_test.domain_name
+  domain_name = var.domain_name_arn
   
-
 
   integrations = {
     "POST /items" = {
