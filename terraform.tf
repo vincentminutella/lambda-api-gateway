@@ -5,7 +5,7 @@ terraform {
             name = "lambda-http-api"
         }
     
-        organization = "example-org-66a440"
+        organization = "brosona"
     }
 
     required_providers {
