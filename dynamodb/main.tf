@@ -1,5 +1,5 @@
 
-resource "aws_dynamodb_table" "ToDoList" {
+resource "aws_dynamodb_table" "todolist" {
   name           = "ToDoList"
   billing_mode   = "PROVISIONED"
   read_capacity  = 20

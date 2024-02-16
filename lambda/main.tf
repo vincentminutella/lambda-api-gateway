@@ -1,22 +1,28 @@
 resource "aws_iam_role" "lambda_service_role" {
     name = "lambda_service_role"
-    assume_role_policy = data.aws_iam_policy_document.lambda_assume_role_policy.json
+    assume_role_policy = jsonencode({
+        Version = "2012-10-17"
+        Statement = [
+          {
+            Action = "sts:AssumeRole"
+            Effect = "Allow"
+            Sid    = ""
+            Principal = {
+              Service = "lambda.amazonaws.com"
+            }
+          }
+        ]
+      })
+
     managed_policy_arns = [aws_iam_policy.lambda_service_role_policy.arn]
+
+  depends_on {
+    aws_iam_policy.lambda_service_role_policy
+  }
 } 
 
-data "aws_iam_policy_document" "lambda_assume_role_policy" {
-  statement {
-    actions = ["sts:AssumeRole"]
-
-    principals {
-      type        = "Service"
-      identifiers = ["lambda.amazonaws.com"]
-    }
-  }
-}
-
 resource "aws_iam_policy" "lambda_service_role_policy" {
-  name = "policy-618033"
+  name = "lambda_sqs_to_dynamo_service_role"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -28,6 +34,12 @@ resource "aws_iam_policy" "lambda_service_role_policy" {
             "dynamodb:PutItem",
             "dynamodb:Scan",
             "dynamodb:UpdateItem", 
+        ]
+        Effect   = "Allow"
+        Resource = "${var.table_arn}"
+      },
+      {
+        Action   = [           
             "logs:CreateLogGroup",
             "logs:CreateLogStream",
             "logs:PutLogEvents"
@@ -35,9 +47,19 @@ resource "aws_iam_policy" "lambda_service_role_policy" {
         Effect   = "Allow"
         Resource = "*"
       },
+      {
+        Action   = [           
+            "sqs:GetQueueAttributes",
+            "sqs:ReceiveMessage",
+            "sqs:DeleteMessage"
+        ]
+        Effect   = "Allow"
+        Resource = "${var.sqs_arn}"
+      }
     ]
   })
 }
+
 
 data "archive_file" "lambda_source" {
     type = "zip"
@@ -52,4 +74,9 @@ resource "aws_lambda_function" "lambda" {
 
     runtime = "nodejs20.x"
     handler = "index.handler"
+}
+
+resource "aws_lambda_event_source_mapping" "sqs" {
+  event_source_arn = var.sqs_arn
+  function_name    = aws_lambda_function.lambda.arn
 }

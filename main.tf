@@ -3,44 +3,21 @@ provider "aws" {
 }
 
 module "api_gateway" {
-  source = "terraform-aws-modules/apigateway-v2/aws"
+    source = ".//api"
+    domain_name_arn = var.domain_name_arn
+    region = var.region
+    sqs_arn = var.sqs_arn
+}
 
-  name          = "http-api"
-  description   = "HTTP API Gateway, Lambda, DynamoDb"
-  protocol_type = "HTTP"
-
-  domain_name = var.domain_name_arn
-  
-
-  integrations = {
-    "POST /items" = {
-      lambda_arn             =  module.lambda.lambda_arn
-    }
-
-    "GET /items" = {
-      lambda_arn             = module.lambda.lambda_arn
-    }
-
-    "GET /items/{id}" = {
-      lambda_arn             = module.lambda.lambda_arn
-    }
-
-    "PUT /items/{id}" = {
-      lambda_arn             = module.lambda.lambda_arn
-    }
-
-    "DELETE /items/{id}" = {
-      lambda_arn             = module.lambda.lambda_arn
-    }
-
-    "$default" = {
-      lambda_arn             = module.lambda.lambda_arn 
-    }
-  }
+module "sqs" {
+    source = ".//sqs"
+    sqs_arn = var.sqs_arn
 }
 
 module "lambda" {
     source = ".//lambda"
+    sqs_arn = var.sqs_arn
+    table_arn = var.table_arn
 }
 
 module "dynamodb" {
