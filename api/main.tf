@@ -1,38 +1,33 @@
 resource "aws_api_gateway_rest_api" "api" {
-
-  name          = "rest-api"
-  description   = "REST API Gateway to SQS"
-  protocol_type = "HTTP"
-
-  domain_name = var.domain_name_arn
-
-}
-
-resource "aws_api_gateway_request_validator" "api" {
-  rest_api_id           = "${aws_api_gateway_rest_api.api.id}"
-  name                  = "payload-validator"
-  validate_request_body = true
+  name        = "rest-api-sqs"
+  description = "POST records to SQS queue"
 }
 
 resource "aws_api_gateway_model" "api" {
-  rest_api_id  = "${aws_api_gateway_rest_api.api.id}"
-  name         = "PayloadValidator"
-  description  = "validate the json body content conforms to the below spec"
+  rest_api_id  = aws_api_gateway_rest_api.api.id
+  name         = "todo"
+  description  = "a todo list item"
   content_type = "application/json"
 
-  schema = <<EOF
-  {
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "type": "object",
-    "required": [ "id", "date", "text"],
-    "properties": {
-    "id": { "type": "string" },
-    "date": { "type": "string },
-    "text": { "type": "string }
+  schema = jsonencode({
+    "$schema" = "http://json-schema.org/draft-04/schema#"
+    title     = "SchemaModel"
+    type      = "object"
+
+    properties = {
+      id = {
+        type = "string"
+      },
+      date = {
+        type = "string"
+      },
+      text = {
+        type = "string"
+      }
     }
-  }
-  EOF
+  })
 }
+
 
 resource "aws_api_gateway_method" "api" {
   rest_api_id          = "${aws_api_gateway_rest_api.api.id}"
@@ -40,45 +35,10 @@ resource "aws_api_gateway_method" "api" {
   api_key_required     = false
   http_method          = "POST"
   authorization        = "NONE"
-  request_validator_id = "${aws_api_gateway_request_validator.api.id}"
 
   request_models = {
     "application/json" = "${aws_api_gateway_model.api.name}"
   }
-}
-
-resource "aws_api_gateway_integration_response" "200" {
-  rest_api_id       = "${aws_api_gateway_rest_api.api.id}"
-  resource_id       = "${aws_api_gateway_rest_api.api.root_resource_id}"
-  http_method       = "${aws_api_gateway_method.api.http_method}"
-  status_code       = "${aws_api_gateway_method_response.200.status_code}"
-  selection_pattern = "^2[0-9][0-9]" // regex pattern for any 200 message that comes back from SQS
-
-  response_templates = {
-    "application/json" = "{\"message\": \"post to sqs successful!\"}"
-  }
-
-  depends_on = ["aws_api_gateway_integration.api"]
-}
-
-resource "aws_api_gateway_method_response" "200" {
-  rest_api_id = "${aws_api_gateway_rest_api.api.id}"
-  resource_id = "${aws_api_gateway_rest_api.api.root_resource_id}"
-  http_method = "${aws_api_gateway_method.api.http_method}"
-  status_code = 200
-
-  response_models = {
-    "application/json" = "Empty"
-  }
-}
-
-resource "aws_api_gateway_deployment" "api" {
-  rest_api_id = "${aws_api_gateway_rest_api.api.id}"
-  stage_name  = "main"
-
-  depends_on = [
-    "aws_api_gateway_integration.api",
-  ]
 }
 
 resource "aws_api_gateway_integration" "api" {
@@ -89,7 +49,7 @@ resource "aws_api_gateway_integration" "api" {
   integration_http_method = "POST"
   passthrough_behavior    = "NEVER"
   credentials             = "${aws_iam_role.api_service_role.arn}"
-  uri                     = "arn:aws:apigateway:${var.region}:sqs:path/${var.sqs_arn}"
+  uri                     = "arn:aws:apigateway:${var.region}:sqs:path/${var.sqs_name}"
 
   request_parameters = {
     "integration.request.header.Content-Type" = "'application/x-www-form-urlencoded'"
@@ -99,6 +59,7 @@ resource "aws_api_gateway_integration" "api" {
     "application/json" = "Action=SendMessage&MessageBody=$input.body"
   }
 }
+
 resource "aws_iam_role" "api_service_role" {
       name = "api-service-role"
       assume_role_policy = jsonencode({
@@ -116,10 +77,6 @@ resource "aws_iam_role" "api_service_role" {
       })
 
     managed_policy_arns = [aws_iam_policy.api_service_role_policy.arn]
-
-  depends_on {
-    aws_iam_policy.api_service_role_policy
-  }
 } 
 
 resource "aws_iam_policy" "api_service_role_policy" {
@@ -166,4 +123,40 @@ resource "aws_iam_policy" "api_service_role_policy" {
       }      
     ]
   })
+}
+
+resource "aws_api_gateway_integration_response" "resp200" {
+  rest_api_id       = "${aws_api_gateway_rest_api.api.id}"
+  resource_id       = "${aws_api_gateway_rest_api.api.root_resource_id}"
+  http_method       = "${aws_api_gateway_method.api.http_method}"
+  status_code       = "${aws_api_gateway_method_response.resp200.status_code}"
+  selection_pattern = "^2[0-9][0-9]"                                       // regex pattern for any 200 message that comes back from SQS
+
+  response_templates = {
+    "application/json" = "{\"message\": \"post to queue complete\"}"
+  }
+
+  depends_on = [
+    aws_api_gateway_integration.api
+  ]
+}
+
+resource "aws_api_gateway_method_response" "resp200" {
+  rest_api_id = "${aws_api_gateway_rest_api.api.id}"
+  resource_id = "${aws_api_gateway_rest_api.api.root_resource_id}"
+  http_method = "${aws_api_gateway_method.api.http_method}"
+  status_code = 200
+
+  response_models = {
+    "application/json" = "Empty"
+  }
+}
+
+resource "aws_api_gateway_deployment" "api" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  stage_name  = var.stage_name
+
+  depends_on = [
+    aws_api_gateway_integration.api
+  ]
 }

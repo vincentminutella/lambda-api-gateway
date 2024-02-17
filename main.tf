@@ -1,23 +1,22 @@
 provider "aws" {
-    region = "us-west-1"
+    region = var.region
 }
 
 module "api_gateway" {
     source = ".//api"
-    domain_name_arn = var.domain_name_arn
     region = var.region
-    sqs_arn = var.sqs_arn
+    sqs_arn = module.sqs.sqs_arn
+    sqs_name = module.sqs.sqs_name    
 }
 
 module "sqs" {
     source = ".//sqs"
-    sqs_arn = var.sqs_arn
 }
 
 module "lambda" {
     source = ".//lambda"
-    sqs_arn = var.sqs_arn
-    table_arn = var.table_arn
+    sqs_arn = module.sqs.sqs_arn
+    table_arn = module.dynamodb.table_arn
 }
 
 module "dynamodb" {

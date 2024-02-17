@@ -15,10 +15,6 @@ resource "aws_iam_role" "lambda_service_role" {
       })
 
     managed_policy_arns = [aws_iam_policy.lambda_service_role_policy.arn]
-
-  depends_on {
-    aws_iam_policy.lambda_service_role_policy
-  }
 } 
 
 resource "aws_iam_policy" "lambda_service_role_policy" {
@@ -68,7 +64,7 @@ data "archive_file" "lambda_source" {
 }
 
 resource "aws_lambda_function" "lambda" {
-    filename = "lambda_soruce_function.zip"
+    filename = "lambda_source_function.zip"
     function_name = "handler"
     role = aws_iam_role.lambda_service_role.arn
 
