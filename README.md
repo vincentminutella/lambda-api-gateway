@@ -6,7 +6,7 @@ you might ask why is SQS included in this architecture?
 The short answer is because I wanted to experiment deploying
 and integrating an SQS service. This turned out to bite me 
 as I am fairly confident it is not possible to pass any other 
-http method besides POST through an API -> SQS -> Lambda
+http method (via Terraform) besides POST through an API -> SQS -> Lambda
 integration and if I had just done API -> Lambda, this example
 would have had more robust CRUD capabilities.  
 
