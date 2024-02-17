@@ -1,4 +1,4 @@
-##  API Gateway with a single POST route to an SQS queue with a lambda trigger designed to write a todo list item to a dynamodb table
+##  API Gateway POST route to an SQS queue with a lambda trigger writing a todo list item to a dynamodb table with Node Middleware
 
 Tested using ThunderClient via the public API invokation URI with an example data structure: 
 
