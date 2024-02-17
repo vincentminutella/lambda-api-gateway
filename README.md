@@ -17,6 +17,10 @@ the index.mjs file to include DynamoDB crud methods as well.
 This is a lot of code change though and I want to work on other stuff since 
 this proof of concept is fully functional.
 
+
+
+
+
 Tested using ThunderClient via the public API invokation URI with an example data structure: 
 
     {
