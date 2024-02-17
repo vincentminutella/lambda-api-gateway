@@ -7,3 +7,6 @@ Tested using ThunderClient via the public API invokation URI with an example dat
       "date":"02162024",
       "text":"test"
     }
+
+
+Thanks, Folks!
