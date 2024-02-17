@@ -20,7 +20,7 @@ export const handler = async (event, context) => {
     "Content-Type": "application/json",
   };
   try {
-        let requestJSON = JSON.parse(event.body);
+        let requestJSON = JSON.parse(event.Records[0].body);
         console.log(requestJSON);
         await dynamo.send(
           new PutCommand({
