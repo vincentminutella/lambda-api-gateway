@@ -1,4 +1,4 @@
-#  A REST API Gateway, SQS, Lambda (NodeJS middleware), DynamoDB Integration Sample
+#  A REST API Gateway, SQS, Lambda (NodeJS), DynamoDB Integration Sample
 
 ## Note: 
 you might ask why is SQS included in this architecture?
